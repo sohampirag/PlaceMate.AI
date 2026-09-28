@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+sqlalchemy
+supabase
+pipecat-ai
+pipecat-ai[cartesia,google,sarvam]
+groq
+python-multipart
+pymupdf
+python-dotenv
+httpx
