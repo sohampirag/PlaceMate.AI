@@ -11,19 +11,49 @@ export default function ReportPage() {
 
 
 
+  const [scores, setScores] = useState<any[]>([]);
+  const [improvements, setImprovements] = useState<any[]>([]);
+
   useEffect(() => {
-    const fetchJobs = async () => {
+    const fetchData = async () => {
       try {
         const role = localStorage.getItem("targetRole") || "Software Engineer";
-        const res = await api.get(`/api/jobs/match?target_role=${encodeURIComponent(role)}`);
-        setJobs(res.data);
+        
+        // Load scores from localStorage
+        const aptScore = parseInt(localStorage.getItem("aptitudeScore") || "70");
+        const codScore = parseInt(localStorage.getItem("codingScore") || "100");
+        const techScore = parseInt(localStorage.getItem("techScore") || "85");
+        const hrScore = parseInt(localStorage.getItem("hrScore") || "92");
+        
+        const currentScores = [
+          { name: "Technical Interview", score: techScore, color: "bg-blue-500", glow: "shadow-[0_0_10px_rgba(59,130,246,0.5)]" },
+          { name: "HR Interview", score: hrScore, color: "bg-purple-500", glow: "shadow-[0_0_10px_rgba(168,85,247,0.5)]" },
+          { name: "Aptitude Assessment", score: aptScore, color: "bg-amber-500", glow: "shadow-[0_0_10px_rgba(251,191,36,0.5)]" },
+          { name: "Coding Practice", score: codScore, color: "bg-emerald-500", glow: "shadow-[0_0_10px_rgba(16,185,129,0.5)]" },
+        ];
+        setScores(currentScores);
+        
+        // Fetch jobs and report simultaneously
+        const [jobsRes, reportRes] = await Promise.all([
+          api.get(`/api/jobs/match?target_role=${encodeURIComponent(role)}`),
+          api.post("/api/practice/report/generate", {
+            target_role: role,
+            scores: { technical: techScore, hr: hrScore, aptitude: aptScore, coding: codScore }
+          }).catch(e => ({ data: { improvements: [
+            {title: "System Design (Technical)", description: "Your answers lacked specific architectural patterns. Review microservices vs monolith trade-offs."},
+            {title: "Quantitative (Aptitude)", description: "Speed needs improvement on algebra questions. Practice timed sections."}
+          ] } }))
+        ]);
+        
+        setJobs(jobsRes.data);
+        setImprovements(reportRes.data.improvements || []);
       } catch (error) {
-        console.error("Failed to load jobs", error);
+        console.error("Failed to load data", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchJobs();
+    fetchData();
   }, []);
 
   return (
@@ -42,13 +72,8 @@ export default function ReportPage() {
               <Award className="text-blue-500 w-6 h-6" /> Score Breakdown
             </h2>
             <div className="space-y-5">
-              {[
-                { name: "Technical Interview", score: 85, color: "bg-blue-500", glow: "shadow-[0_0_10px_rgba(59,130,246,0.5)]" },
-                { name: "HR Interview", score: 92, color: "bg-purple-500", glow: "shadow-[0_0_10px_rgba(168,85,247,0.5)]" },
-                { name: "Aptitude Assessment", score: 70, color: "bg-amber-500", glow: "shadow-[0_0_10px_rgba(251,191,36,0.5)]" },
-                { name: "Coding Practice", score: 100, color: "bg-emerald-500", glow: "shadow-[0_0_10px_rgba(16,185,129,0.5)]" },
-              ].map((round) => (
-                <div key={round.name}>
+              {scores.map((round, idx) => (
+                <div key={idx}>
                   <div className="flex justify-between text-sm font-medium mb-2 text-gray-300">
                     <span>{round.name}</span>
                     <span className="text-white">{round.score}%</span>
@@ -68,20 +93,20 @@ export default function ReportPage() {
               <FileText className="text-amber-500 w-6 h-6" /> Interview Areas for Improvement
             </h2>
             <ul className="space-y-3">
-              <li className="flex gap-3 text-gray-300 bg-gray-800/50 p-4 rounded-xl border border-gray-700/50">
-                <CheckCircle2 className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" />
-                <div>
-                  <strong className="block text-white mb-1">System Design (Technical)</strong>
-                  <span className="font-light">Your answers lacked specific architectural patterns. Review microservices vs monolith trade-offs.</span>
+              {loading ? (
+                <div className="animate-pulse space-y-4">
+                  <div className="h-20 bg-gray-800/50 rounded-xl"></div>
+                  <div className="h-20 bg-gray-800/50 rounded-xl"></div>
                 </div>
-              </li>
-              <li className="flex gap-3 text-gray-300 bg-gray-800/50 p-4 rounded-xl border border-gray-700/50">
-                <CheckCircle2 className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" />
-                <div>
-                  <strong className="block text-white mb-1">Quantitative (Aptitude)</strong>
-                  <span className="font-light">Speed needs improvement on algebra questions. Practice timed sections.</span>
-                </div>
-              </li>
+              ) : improvements.map((item, idx) => (
+                <li key={idx} className="flex gap-3 text-gray-300 bg-gray-800/50 p-4 rounded-xl border border-gray-700/50">
+                  <CheckCircle2 className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="block text-white mb-1">{item.title}</strong>
+                    <span className="font-light">{item.description}</span>
+                  </div>
+                </li>
+              ))}
             </ul>
           </div>
           

@@ -40,6 +40,7 @@ export default function AptitudePage() {
         answers,
       });
       setResult(res.data);
+      localStorage.setItem("aptitudeScore", res.data.score.toFixed(0));
     } catch (error) {
       console.error("Submission failed", error);
       alert("Failed to grade test.");

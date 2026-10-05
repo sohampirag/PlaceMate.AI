@@ -1,9 +1,27 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 import { Mic, Code, BrainCircuit, Users, Sparkles } from "lucide-react";
 
 export default function RoundsPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/login");
+      } else {
+        setLoading(false);
+      }
+    };
+    checkAuth();
+  }, [router]);
+
   const rounds = [
     {
       title: "Technical Mock Interview",
@@ -42,6 +60,17 @@ export default function RoundsPage() {
       bg: "bg-emerald-500/10",
     },
   ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-400">
+        <div className="flex items-center gap-3">
+          <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+          <span>Checking authorization...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto p-6 mt-10">

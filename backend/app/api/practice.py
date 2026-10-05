@@ -72,3 +72,14 @@ async def coding_chat(request: CodingChatRequest):
     """
     response_msg = await handle_coding_chat([msg.model_dump() for msg in request.messages], request.target_role)
     return response_msg
+
+class ReportRequest(BaseModel):
+    target_role: str
+    scores: dict
+
+from app.ai.question_generator import generate_report_feedback
+
+@router.post("/report/generate")
+async def get_report_feedback(request: ReportRequest):
+    improvements = await generate_report_feedback(request.target_role, request.scores)
+    return {"improvements": improvements}

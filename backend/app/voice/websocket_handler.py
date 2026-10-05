@@ -10,7 +10,7 @@ from app.voice.pipecat_pipeline import run_voice_pipeline
 router = APIRouter()
 
 @router.websocket("/ws/interview")
-async def websocket_interview_endpoint(websocket: WebSocket, type: str = "Technical", role: str = "Software Engineer"):
+async def websocket_interview_endpoint(websocket: WebSocket, type: str = "Technical", role: str = "Software Engineer", name: str = "Candidate"):
     """
     WebSocket endpoint for the real-time voice interview using Pipecat.
     """
@@ -26,18 +26,21 @@ async def websocket_interview_endpoint(websocket: WebSocket, type: str = "Techni
             audio_in_enabled=True,
             audio_in_sample_rate=16000,
             serializer=RawPCMSerializer(sample_rate=16000, num_channels=1),
-            vad_enabled=False,
         )
     )
     
     try:
         # Run the Pipecat pipeline
-        await run_voice_pipeline(transport, websocket, interview_type=type, target_role=role)
+        await run_voice_pipeline(transport, websocket, interview_type=type, target_role=role, user_name=name)
     except WebSocketDisconnect:
         print("WebSocket disconnected")
     except Exception as e:
         import traceback
         traceback.print_exc()
         print(f"Error in websocket pipeline: {e}")
+        try:
+            await websocket.send_json({"type": "error", "message": str(e)})
+        except Exception:
+            pass
     finally:
         pass

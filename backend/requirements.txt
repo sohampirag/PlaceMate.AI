@@ -5,7 +5,7 @@ pydantic-settings
 sqlalchemy
 supabase
 pipecat-ai
-pipecat-ai[cartesia,google,sarvam]
+pipecat-ai[cartesia,google,sarvam,silero]
 groq
 python-multipart
 pymupdf

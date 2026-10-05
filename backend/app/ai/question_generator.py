@@ -136,3 +136,37 @@ async def handle_coding_chat(messages: list, target_role: str):
     except Exception as e:
         print(f"Error in coding chat: {e}")
         return {"role": "assistant", "content": f"Sorry, I encountered an error: {e}"}
+
+async def generate_report_feedback(target_role: str, scores: dict):
+    """
+    Generates personalized areas for improvement based on mock scores.
+    """
+    if not client:
+        return [
+            {"title": "System Design (Technical)", "description": "Your answers lacked specific architectural patterns. Review microservices vs monolith trade-offs."},
+            {"title": "Quantitative (Aptitude)", "description": "Speed needs improvement on algebra questions. Practice timed sections."}
+        ]
+        
+    system_prompt = (
+        f"You are an AI career coach generating feedback for a candidate applying for {target_role}. "
+        f"The candidate has the following mock scores: {json.dumps(scores)}. "
+        "Generate 2 specific areas for improvement. "
+        "Return the result strictly as a JSON object with a single key 'improvements' containing an array of exactly 2 objects. "
+        "Each object must have: "
+        "'title' (string, e.g. 'System Design (Technical)'), 'description' (string, short actionable feedback)."
+    )
+    
+    try:
+        response = await client.chat.completions.create(
+            model="openai/gpt-oss-120b",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": "Generate the feedback."}
+            ],
+            response_format={"type": "json_object"}
+        )
+        data = json.loads(response.choices[0].message.content)
+        return data.get("improvements", [])
+    except Exception as e:
+        print(f"Error generating feedback: {e}")
+        return []
