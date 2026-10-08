@@ -76,3 +76,16 @@ CREATE TABLE public.saved_jobs (
 ALTER TABLE public.saved_jobs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage their own saved jobs" ON public.saved_jobs FOR ALL USING (auth.uid() = user_id);
 
+    status TEXT DEFAULT 'saved' CHECK (status IN ('saved', 'applied', 'interviewing', 'rejected', 'offer')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.saved_jobs ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can manage their own saved jobs" ON public.saved_jobs;
+DROP POLICY IF EXISTS "Allow all saved_jobs" ON public.saved_jobs;
+
+CREATE POLICY "Users can manage their own saved jobs" 
+    ON public.saved_jobs FOR ALL USING (auth.uid() = user_id);
+
+CREATE INDEX IF NOT EXISTS idx_saved_jobs_user_id ON public.saved_jobs(user_id);

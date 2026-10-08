@@ -27,6 +27,19 @@ export default function SignupPage() {
     if (error) {
       setError(error.message);
     } else {
+      if (data.user) {
+        try {
+          const { api } = await import("@/lib/api");
+          await api.post("/api/auth/sync", {
+            user_id: data.user.id,
+            email: data.user.email || email,
+            name: email.split("@")[0],
+            target_role: "Software Engineer"
+          });
+        } catch (dbErr) {
+          console.warn("User profile signup sync note:", dbErr);
+        }
+      }
       setSuccess(true);
     }
     setLoading(false);

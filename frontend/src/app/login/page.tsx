@@ -25,7 +25,18 @@ export default function LoginPage() {
 
     if (error) {
       setError(error.message);
-    } else {
+    } else if (data.user) {
+      try {
+        const { api } = await import("@/lib/api");
+        await api.post("/api/auth/sync", {
+          user_id: data.user.id,
+          email: data.user.email || email,
+          name: data.user.user_metadata?.name || email.split("@")[0],
+          target_role: "Software Engineer"
+        });
+      } catch (dbErr) {
+        console.warn("User profile sync note:", dbErr);
+      }
       router.push("/dashboard");
     }
     setLoading(false);

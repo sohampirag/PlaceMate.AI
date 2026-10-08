@@ -24,7 +24,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.api import resume, practice, jobs
+from app.api import resume, practice, jobs, auth
+app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 app.include_router(resume.router, prefix="/api/resume", tags=["Resume"])
 app.include_router(practice.router, prefix="/api/practice", tags=["Practice"])
 app.include_router(jobs.router, prefix="/api/jobs", tags=["Jobs"])

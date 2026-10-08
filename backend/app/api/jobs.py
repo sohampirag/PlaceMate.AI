@@ -1,6 +1,7 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query, HTTPException
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
+from app.db.supabase_client import db_save_job, db_get_saved_jobs, db_delete_saved_job
 
 router = APIRouter()
 
@@ -12,13 +13,20 @@ class JobListing(BaseModel):
     description: str
     url: str
 
+class SaveJobRequest(BaseModel):
+    id: str
+    title: str
+    company: str
+    location: str
+    url: Optional[str] = ""
+    status: Optional[str] = "saved"
+    user_id: Optional[str] = None
+
 @router.get("/match", response_model=List[JobListing])
 async def match_jobs(target_role: str = "Software Engineer", skills: str = ""):
     """
     Fetches job listings based on the user's target role and skills.
-    This is a mock implementation. In a real app, you would call an external API like Adzuna or Jooble.
     """
-    # Mock data based on typical searches
     mock_jobs = [
         JobListing(
             id="job123",
@@ -45,5 +53,31 @@ async def match_jobs(target_role: str = "Software Engineer", skills: str = ""):
             url="https://example.com/jobs/125"
         )
     ]
-    
     return mock_jobs
+
+@router.post("/save")
+async def save_job_endpoint(request: SaveJobRequest):
+    """
+    Saves a job to the user's saved_jobs table in Supabase DB.
+    """
+    saved = db_save_job(request.model_dump(), user_id=request.user_id)
+    return {"status": "success", "saved_job": saved}
+
+@router.get("/saved")
+async def get_saved_jobs_endpoint(user_id: Optional[str] = Query(None)):
+    """
+    Fetches saved jobs from Supabase DB.
+    """
+    jobs = db_get_saved_jobs(user_id=user_id)
+    return {"jobs": jobs}
+
+@router.delete("/saved/{job_id}")
+async def delete_saved_job_endpoint(job_id: str, user_id: Optional[str] = Query(None)):
+    """
+    Deletes a saved job from Supabase DB.
+    """
+    success = db_delete_saved_job(job_id=job_id, user_id=user_id)
+    if not success:
+        raise HTTPException(status_code=400, detail="Failed to delete job")
+    return {"status": "success"}
+
