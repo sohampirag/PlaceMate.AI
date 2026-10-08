@@ -3,13 +3,23 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
-import { Code2, Send, Bot, User, ArrowLeft } from "lucide-react";
+import { Code2, Send, Bot, User, ArrowLeft, Lightbulb, Paperclip } from "lucide-react";
 import Link from "next/link";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
 }
+
+const renderTextSegments = (text: string) => {
+  const segments = text.split(/(\*\*.*?\*\*)/g);
+  return segments.map((seg, j) => {
+    if (seg.startsWith('**') && seg.endsWith('**')) {
+      return <strong key={j} className="font-semibold text-blue-400">{seg.slice(2, -2)}</strong>;
+    }
+    return <span key={j}>{seg}</span>;
+  });
+};
 
 const renderMessageContent = (content: string) => {
   const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
@@ -29,19 +39,26 @@ const renderMessageContent = (content: string) => {
   }
 
   return (
-    <div className="space-y-4 font-light text-[15px] leading-relaxed">
+    <div className="space-y-4 font-normal text-[15px] leading-relaxed">
       {parts.map((part, i) => {
         if (part.type === 'text') {
-          // Parse basic bold markdown
-          const textSegments = part.content.split(/(\*\*.*?\*\*)/g);
+          if (part.content.includes('[LIGHTBULB]')) {
+            const [before, after] = part.content.split('[LIGHTBULB]');
+            return (
+              <div key={i} className="space-y-6">
+                <div className="whitespace-pre-wrap">{renderTextSegments(before)}</div>
+                <div className="flex items-center gap-4 p-4 bg-[#0F172A]/50 border border-[#1E293B] rounded-xl">
+                  <div className="p-1.5 bg-blue-500/20 text-blue-400 rounded-lg shadow-sm">
+                    <Lightbulb className="w-5 h-5" />
+                  </div>
+                  <span className="font-semibold text-white tracking-wide">{after.trim()}</span>
+                </div>
+              </div>
+            );
+          }
           return (
             <div key={i} className="whitespace-pre-wrap">
-              {textSegments.map((seg, j) => {
-                if (seg.startsWith('**') && seg.endsWith('**')) {
-                  return <strong key={j} className="font-semibold text-white">{seg.slice(2, -2)}</strong>;
-                }
-                return <span key={j}>{seg}</span>;
-              })}
+              {renderTextSegments(part.content)}
             </div>
           );
         } else {
@@ -81,7 +98,7 @@ export default function CodingChatPage() {
     setMessages([
       {
         role: "assistant",
-        content: `Hi! I'm your AI DSA Mentor for the **${role}** position. Instead of a standard coding compiler, we will discuss Data Structures and Algorithms interactively here.\n\nYou can ask me what the most common DSA questions are, how to approach them, or request optimal pseudocode for specific patterns. \n\n**What would you like to practice today?**`
+        content: `Hi! I'm your AI DSA Mentor for the **${role}** position.\n\nInstead of a standard coding compiler, we will discuss Data Structures and Algorithms interactively here.\n\nYou can ask me what the most common DSA questions are, how to approach them, or request optimal pseudocode for specific patterns.\n\n[LIGHTBULB] What would you like to practice today?`
       }
     ]);
   }, []);
@@ -125,7 +142,7 @@ export default function CodingChatPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-6 mt-2 md:mt-6 h-[calc(100vh-80px)] flex flex-col">
+    <div className="w-full max-w-7xl mx-auto p-4 md:p-6 mt-2 h-[94vh] flex flex-col">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <div className="p-3.5 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl border border-blue-500/30 shadow-[0_0_30px_rgba(59,130,246,0.15)]">
@@ -141,29 +158,29 @@ export default function CodingChatPage() {
         </Link>
       </div>
 
-      <div className="flex-1 bg-gradient-to-b from-gray-900/90 to-[#0a0a0a] backdrop-blur-2xl border border-gray-800/80 rounded-[2rem] shadow-2xl flex flex-col overflow-hidden relative">
+      <div className="flex-1 w-full max-w-5xl mx-auto bg-[#0B1121] border border-[#1E293B] rounded-[1.5rem] shadow-2xl flex flex-col overflow-hidden relative">
         
         {/* Chat Area */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 custom-scrollbar">
           {messages.map((msg, idx) => (
             <div key={idx} className={`flex gap-4 md:gap-6 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg ${msg.role === "assistant" ? "bg-gradient-to-br from-blue-600/20 to-purple-600/20 border border-blue-500/30 text-blue-400" : "bg-gradient-to-br from-emerald-600/20 to-teal-600/20 border border-emerald-500/30 text-emerald-400"}`}>
-                {msg.role === "assistant" ? <Bot className="w-6 h-6" /> : <User className="w-6 h-6" />}
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm ${msg.role === "assistant" ? "bg-[#151C2C] border border-[#1E293B] text-gray-300" : "bg-blue-600 border border-blue-500 text-white"}`}>
+                {msg.role === "assistant" ? <Bot className="w-5 h-5" /> : <User className="w-5 h-5" />}
               </div>
-              <div className={`max-w-[85%] md:max-w-[75%] rounded-3xl p-6 shadow-sm ${msg.role === "user" ? "bg-gradient-to-br from-emerald-600/10 to-teal-900/20 border border-emerald-500/20 text-emerald-50 rounded-tr-sm" : "bg-gradient-to-br from-gray-800/80 to-gray-900/80 border border-gray-700/50 text-gray-200 rounded-tl-sm shadow-[0_4px_20px_rgba(0,0,0,0.2)]"}`}>
+              <div className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-6 py-5 ${msg.role === "user" ? "bg-blue-600 text-white rounded-tr-sm" : "bg-[#151C2C] border border-[#1E293B] text-gray-200 shadow-sm rounded-xl"}`}>
                 {renderMessageContent(msg.content)}
               </div>
             </div>
           ))}
           {loading && (
             <div className="flex gap-4">
-              <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#151C2C] border border-[#1E293B] text-gray-300 flex items-center justify-center flex-shrink-0">
                 <Bot className="w-5 h-5" />
               </div>
-              <div className="bg-gray-800/60 border border-gray-700/50 rounded-2xl p-5 flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+              <div className="bg-[#151C2C] border border-[#1E293B] rounded-2xl px-5 py-4 flex items-center gap-2 rounded-xl">
+                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
               </div>
             </div>
           )}
@@ -171,27 +188,27 @@ export default function CodingChatPage() {
         </div>
 
         {/* Input Area */}
-        <div className="p-5 bg-[#0a0a0a]/80 backdrop-blur-md border-t border-gray-800/50 z-10">
-          <div className="relative flex items-end gap-3 max-w-4xl mx-auto bg-gray-900 rounded-3xl border border-gray-700/50 shadow-inner focus-within:border-blue-500/50 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all p-2">
+        <div className="p-4 bg-transparent border-t border-[#1E293B] z-10">
+          <div className="relative flex items-end gap-3 max-w-3xl mx-auto bg-[#0F172A] rounded-2xl border border-[#1E293B] focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/50 transition-all p-2">
+            <button className="p-2.5 mb-0.5 ml-1 bg-[#1E293B]/50 hover:bg-[#1E293B] text-gray-400 rounded-xl transition-all flex-shrink-0">
+              <Paperclip className="w-5 h-5" />
+            </button>
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask about graph algorithms, dynamic programming, or request code..."
-              className="w-full bg-transparent text-white p-3 px-4 resize-none focus:outline-none custom-scrollbar min-h-[50px] max-h-[200px]"
+              placeholder="Message your DSA Copilot..."
+              className="w-full bg-transparent text-gray-100 p-2.5 resize-none focus:outline-none custom-scrollbar min-h-[44px] max-h-[200px]"
               rows={1}
             />
             <button
               onClick={handleSend}
               disabled={loading || !input.trim()}
-              className="p-3.5 mb-1 mr-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:from-gray-700 disabled:to-gray-700 text-white rounded-2xl transition-all shadow-lg disabled:shadow-none flex-shrink-0"
+              className="p-2.5 mb-0.5 mr-1 bg-blue-600 hover:bg-blue-500 disabled:bg-[#1E293B] text-white disabled:text-gray-500 rounded-xl transition-all flex-shrink-0"
             >
               <Send className="w-5 h-5" />
             </button>
           </div>
-          <p className="text-center text-[11px] text-gray-500 mt-4 font-medium tracking-wide uppercase">
-            AI can make mistakes. Verify critical technical details.
-          </p>
         </div>
         
       </div>

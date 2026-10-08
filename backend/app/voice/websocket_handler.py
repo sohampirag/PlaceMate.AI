@@ -9,11 +9,27 @@ from app.voice.pipecat_pipeline import run_voice_pipeline
 
 router = APIRouter()
 
+import re
+
+def sanitize_name(raw_name: str) -> str:
+    if not raw_name:
+        return "Candidate"
+    # If it's an email, take the part before @
+    name = raw_name.split('@')[0]
+    # Replace dots and underscores with space
+    name = name.replace('.', ' ').replace('_', ' ')
+    # Remove digits and special characters
+    name = re.sub(r'[^a-zA-Z\s]', '', name)
+    # Strip and Title case
+    name = name.strip().title()
+    return name if name else "Candidate"
+
 @router.websocket("/ws/interview")
 async def websocket_interview_endpoint(websocket: WebSocket, type: str = "Technical", role: str = "Software Engineer", name: str = "Candidate"):
     """
     WebSocket endpoint for the real-time voice interview using Pipecat.
     """
+    clean_name = sanitize_name(name)
     await websocket.accept()
     
     # Configure the Pipecat WebSocket transport
@@ -31,7 +47,7 @@ async def websocket_interview_endpoint(websocket: WebSocket, type: str = "Techni
     
     try:
         # Run the Pipecat pipeline
-        await run_voice_pipeline(transport, websocket, interview_type=type, target_role=role, user_name=name)
+        await run_voice_pipeline(transport, websocket, interview_type=type, target_role=role, user_name=clean_name)
     except WebSocketDisconnect:
         print("WebSocket disconnected")
     except Exception as e:

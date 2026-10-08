@@ -55,11 +55,11 @@ export default function AptitudePage() {
 
   if (result) {
     return (
-      <div className="max-w-2xl mx-auto p-6 mt-20 text-center bg-white rounded-xl shadow-sm border border-gray-200">
+      <div className="max-w-2xl mx-auto p-6 mt-20 text-center bg-gray-900 rounded-xl shadow-sm border border-gray-800">
         <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Test Completed!</h1>
-        <p className="text-gray-600 mb-6">You scored {result.correct} out of {result.total}</p>
-        <div className="text-5xl font-bold text-blue-600 mb-8">{result.score.toFixed(0)}%</div>
+        <h1 className="text-3xl font-bold text-white mb-2">Test Completed!</h1>
+        <p className="text-gray-400 mb-6">You scored {result.correct} out of {result.total}</p>
+        <div className="text-5xl font-bold text-blue-500 mb-8">{result.score.toFixed(0)}%</div>
         <button 
           onClick={() => router.push("/rounds")}
           className="bg-gray-900 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800"
@@ -73,8 +73,8 @@ export default function AptitudePage() {
   return (
     <div className="max-w-3xl mx-auto p-6 mt-10">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Aptitude Assessment</h1>
-        <div className="flex items-center gap-2 text-amber-600 font-semibold bg-amber-50 px-4 py-2 rounded-lg">
+        <h1 className="text-3xl font-bold text-white">Aptitude Assessment</h1>
+        <div className="flex items-center gap-2 text-amber-500 font-semibold bg-amber-950/30 px-4 py-2 rounded-lg">
           <Clock className="w-5 h-5" />
           <span>Timed Practice</span>
         </div>
@@ -82,31 +82,31 @@ export default function AptitudePage() {
       
       <div className="space-y-8">
         {questions.map((q, index) => (
-          <div key={q.id || index} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div key={q.id || index} className="bg-gray-900 p-6 rounded-xl shadow-sm border border-gray-800">
             <div className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-700 font-bold rounded-full flex items-center justify-center">
+              <div className="flex-shrink-0 w-8 h-8 bg-blue-900/50 text-blue-400 font-bold rounded-full flex items-center justify-center">
                 {index + 1}
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">{q.question}</h3>
+                <h3 className="text-lg font-medium text-white mb-4">{q.question}</h3>
                 <div className="space-y-3">
                   {q.options.map((opt: string, optIdx: number) => (
                     <label 
                       key={optIdx} 
                       className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                         answers[q.id || index] === optIdx 
-                          ? "border-blue-500 bg-blue-50" 
-                          : "border-gray-200 hover:bg-gray-50"
+                          ? "border-blue-500 bg-blue-900/20" 
+                          : "border-gray-700 hover:bg-gray-800"
                       }`}
                     >
                       <input 
                         type="radio"
                         name={`question-${q.id || index}`}
-                        className="w-4 h-4 text-blue-600"
+                        className="w-4 h-4 text-blue-500 bg-gray-800 border-gray-700"
                         checked={answers[q.id || index] === optIdx}
                         onChange={() => handleOptionSelect(q.id || index, optIdx)}
                       />
-                      <span className="text-gray-700">{opt}</span>
+                      <span className="text-gray-300">{opt}</span>
                     </label>
                   ))}
                 </div>

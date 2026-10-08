@@ -1,3 +1,9 @@
+import os
+import httpx
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from fastapi import APIRouter, Query, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
@@ -25,35 +31,54 @@ class SaveJobRequest(BaseModel):
 @router.get("/match", response_model=List[JobListing])
 async def match_jobs(target_role: str = "Software Engineer", skills: str = ""):
     """
-    Fetches job listings based on the user's target role and skills.
+    Fetches job listings based on the user's target role and skills from Adzuna API (India only).
     """
-    mock_jobs = [
-        JobListing(
-            id="job123",
-            title=f"Junior {target_role}",
-            company="Tech Innovators Inc.",
-            location="Remote",
-            description="We are looking for an enthusiastic entry-level engineer to join our growing team.",
-            url="https://example.com/jobs/123"
-        ),
-        JobListing(
-            id="job124",
-            title=f"{target_role}",
-            company="Global Solutions LLC",
-            location="New York, NY",
-            description=f"Requires strong skills in {skills if skills else 'relevant technologies'}.",
-            url="https://example.com/jobs/124"
-        ),
-        JobListing(
-            id="job125",
-            title=f"Associate {target_role}",
-            company="Startup XYZ",
-            location="San Francisco, CA (Hybrid)",
-            description="Fast-paced environment looking for fresh graduates.",
-            url="https://example.com/jobs/125"
+    app_id = os.getenv("ADZUNA_APP_ID")
+    app_key = os.getenv("ADZUNA_APP_KEY")
+    
+    if not app_id or not app_key:
+        raise HTTPException(status_code=500, detail="Adzuna API credentials not configured.")
+
+    # Adzuna API URL for India (country code 'in')
+    url = "https://api.adzuna.com/v1/api/jobs/in/search/1"
+    
+    # Combine target_role and skills for the search query
+    search_query = f"{target_role} {skills}".strip()
+    
+    params = {
+        "app_id": app_id,
+        "app_key": app_key,
+        "what": search_query,
+        "results_per_page": 10,
+        "content-type": "application/json"
+    }
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url, params=params)
+            response.raise_for_status()
+            data = response.json()
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(status_code=e.response.status_code, detail="Error fetching jobs from Adzuna")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    results = data.get("results", [])
+    
+    jobs = []
+    for job in results:
+        jobs.append(
+            JobListing(
+                id=str(job.get("id")),
+                title=job.get("title", "Unknown Title"),
+                company=job.get("company", {}).get("display_name", "Unknown Company"),
+                location=job.get("location", {}).get("display_name", "Unknown Location"),
+                description=job.get("description", ""),
+                url=job.get("redirect_url", "")
+            )
         )
-    ]
-    return mock_jobs
+        
+    return jobs
 
 @router.post("/save")
 async def save_job_endpoint(request: SaveJobRequest):
